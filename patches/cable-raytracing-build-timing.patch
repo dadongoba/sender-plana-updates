@@ -1,0 +1,38 @@
+--- a/Plugins/JakubCableComponent/Source/JakubCableComponent/Private/JakubCablePhysic.cpp
++++ b/Plugins/JakubCableComponent/Source/JakubCableComponent/Private/JakubCablePhysic.cpp
+@@ -329,7 +329,16 @@
+ #if RHI_RAYTRACING
+ 			if (StaticRayTracingGeometry.IsInitialized())
+ 			{
+-				StaticRayTracingGeometry.SetRequiresBuild(true);
++				// Queue builds with the vertex update, before the geometry manager ticks.
++				if (StaticRayTracingGeometry.IsEvicted())
++				{
++					StaticRayTracingGeometry.CreateRayTracingGeometry(RHICmdList, ERTAccelerationStructureBuildPriority::Normal);
++				}
++				else if (!StaticRayTracingGeometry.HasPendingBuildRequest())
++				{
++					StaticRayTracingGeometry.SetRequiresBuild(true);
++					StaticRayTracingGeometry.RequestBuildIfNeeded(RHICmdList, ERTAccelerationStructureBuildPriority::Normal);
++				}
+ 				bNeedsToUpdateRayTracingCache = true;
+ 			}
+ #endif
+@@ -538,14 +547,11 @@
+ 				return;
+ 			}
+ 
+-			// TODO: Move this call to SetDynamicData_RenderThread(...) once race condition with FRayTracingGeometryManager::Tick() is addressed.
+ 			if (StaticRayTracingGeometry.IsEvicted())
+ 			{
+-				StaticRayTracingGeometry.CreateRayTracingGeometry(Collector.GetRHICommandList(), ERTAccelerationStructureBuildPriority::Normal);
+-			}
+-			else
+-			{
+-				StaticRayTracingGeometry.RequestBuildIfNeeded(Collector.GetRHICommandList(), ERTAccelerationStructureBuildPriority::Normal);
++				// Let the geometry manager restore residency before submitting an instance.
++				Collector.AddReferencedGeometry(StaticRayTracingGeometry.GetGeometryHandle());
++				return;
+ 			}
+ 		}
+ 

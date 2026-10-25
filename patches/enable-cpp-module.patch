@@ -1,0 +1,16 @@
+--- a/sender.uproject
++++ b/sender.uproject
+@@ -3,6 +3,13 @@
+ 	"EngineAssociation": "5.8",
+ 	"Category": "",
+ 	"Description": "",
++	"Modules": [
++		{
++			"Name": "sender",
++			"Type": "Runtime",
++			"LoadingPhase": "Default"
++		}
++	],
+ 	"Plugins": [
+ 		{
+ 			"Name": "ModelingToolsEditorMode",
