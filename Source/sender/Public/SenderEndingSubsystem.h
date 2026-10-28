@@ -47,6 +47,7 @@ private:
     void UpdateSpeakingAnimation(bool bSpeaking);
     void EnsureTalkingAssets();
     void PlayIdleAnimation();
+    void WarmUpTalkingBody();
     UPROPERTY() TObjectPtr<USkeletalMeshComponent> TalkingBody;
     UPROPERTY() TObjectPtr<UAnimSequence> TalkingIdle;
     UPROPERTY() TObjectPtr<UAnimSequence> TalkQuestion;

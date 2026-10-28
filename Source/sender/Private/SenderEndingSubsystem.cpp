@@ -76,6 +76,7 @@ void USenderEndingSubsystem::FindParticipants()
         for(TActorIterator<ACharacter> It(GetWorld());It;++It)
             if(It->GetClass()->GetName().StartsWith(TEXT("ALS_Taro_CharacterBP_C")))
             {NPC=*It;UE_LOG(LogSenderEnding,Log,TEXT("Final NPC found: %s"),*NPC->GetName());break;}
+    if(IsValid(NPC)) WarmUpTalkingBody();
     if(IsValid(NPC) && PlayerController && PlayerController->IsLocalController() && !EndingUI)
     {
         UGameViewportClient* Viewport=GetWorld()->GetGameViewport();
@@ -230,6 +231,19 @@ void USenderEndingSubsystem::PlayIdleAnimation()
 {
     EnsureTalkingAssets();
     if(TalkingBody && TalkingIdle) TalkingBody->PlayAnimation(TalkingIdle,true);
+}
+void USenderEndingSubsystem::WarmUpTalkingBody()
+{
+    EnsureTalkingAssets();
+    if(!TalkingBody) return;
+    // 幂等：已经是单节点模式就不用再切。
+    if(TalkingBody->GetAnimationMode()==EAnimationMode::AnimationSingleNode) return;
+    // PlayAnimation 内部走 SetAnimation：组件当前在 AnimBP 模式下 GetSingleNodeInstance() 为空，
+    // 于是强制切到单节点模式、销毁 AnimBP 实例重建一个。重建那一帧输出参考姿势，交互瞬间就是
+    // "手抬起来卡一下"。这里在世界开始、玩家还没走到交互距离时就把模式换好，之后换片段不再有切换开销。
+    TalkingBody->SetAnimationMode(EAnimationMode::AnimationSingleNode);
+    if(TalkingIdle) TalkingBody->PlayAnimation(TalkingIdle,true);
+    UE_LOG(LogSenderEnding,Log,TEXT("Taro mesh pre-warmed to single-node playback (%s)"),TalkingIdle?*TalkingIdle->GetName():TEXT("no idle clip"));
 }
 void USenderEndingSubsystem::UpdateSpeakingAnimation(bool bSpeaking)
 {
